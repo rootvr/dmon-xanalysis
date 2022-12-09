@@ -1,0 +1,188 @@
+version: '3'
+
+services:
+  mongodb:
+    build:
+      context: robot-shop/mongo
+    image: robotshop/rs-mongodb:2.1.0
+    networks:
+      - robot-shop
+    logging: &logging
+      driver: "json-file"
+      options:
+        max-size: "25m"
+        max-file: "2"
+
+  redis:
+    image: redis:6.2-alpine
+    networks:
+      - robot-shop
+    logging:
+      <<: *logging
+
+  rabbitmq:
+    image: rabbitmq:3.8-management-alpine
+    networks:
+      - robot-shop
+    logging:
+      <<: *logging
+
+  catalogue:
+    build:
+      context: robot-shop/catalogue
+    image: robotshop/rs-catalogue:2.1.0
+    depends_on:
+      - mongodb
+    networks:
+      - robot-shop
+    healthcheck:
+      test: [ "CMD", "curl", "-H", "X-INSTANA-SYNTHETIC: 1", "-f", "http://localhost:8080/health" ]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    logging:
+      <<: *logging
+
+  user:
+    build:
+      context: robot-shop/user
+    image: robotshop/rs-user:2.1.0
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - robot-shop
+    healthcheck:
+      test: [ "CMD", "curl", "-H", "X-INSTANA-SYNTHETIC: 1", "-f", "http://localhost:8080/health" ]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    logging:
+      <<: *logging
+
+  cart:
+    build:
+      context: robot-shop/cart
+    image: robotshop/rs-cart:2.1.0
+    depends_on:
+      - redis
+    networks:
+      - robot-shop
+    healthcheck:
+      test: [ "CMD", "curl", "-H", "X-INSTANA-SYNTHETIC: 1", "-f", "http://localhost:8080/health" ]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    logging:
+      <<: *logging
+
+  mysql:
+    build:
+      context: robot-shop/mysql
+    image: robotshop/rs-mysql-db:2.1.0
+    cap_add:
+      - NET_ADMIN
+    networks:
+      - robot-shop
+    logging:
+      <<: *logging
+
+  shipping:
+    build:
+      context: robot-shop/shipping
+    image: robotshop/rs-shipping:2.1.0
+    depends_on:
+      - mysql
+    networks:
+      - robot-shop
+    healthcheck:
+      test: ["CMD", "curl", "-H", "X-INSTANA-SYNTHETIC: 1", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    logging:
+      <<: *logging
+
+  ratings:
+    build:
+      context: robot-shop/ratings
+    image: robotshop/rs-ratings:2.1.0
+    environment:
+      APP_ENV: prod
+    networks:
+      - robot-shop
+    depends_on:
+      - mysql
+    healthcheck:
+      test: ["CMD", "curl", "-H", "X-INSTANA-SYNTHETIC: 1", "-f", "http://localhost/_health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    logging:
+      <<: *logging
+
+  payment:
+    build:
+      context: robot-shop/payment
+    image: robotshop/rs-payment:2.1.0
+    depends_on:
+      - rabbitmq
+    networks:
+      - robot-shop
+    healthcheck:
+      test: ["CMD", "curl", "-H", "X-INSTANA-SYNTHETIC: 1", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    # Uncomment to change payment gateway
+    #environment:
+      #PAYMENT_GATEWAY: "https://www.worldpay.com"
+    logging:
+      <<: *logging
+
+  dispatch:
+    build:
+      context: robot-shop/dispatch
+    image: robotshop/rs-dispatch:2.1.0
+    depends_on:
+      - rabbitmq
+    networks:
+      - robot-shop
+    logging:
+      <<: *logging
+
+  web:
+    build:
+      context: robot-shop/web
+      args:
+        # agent key to download tracing libs
+        KEY: ${INSTANA_AGENT_KEY}
+    image: robotshop/rs-web:2.1.0
+    depends_on:
+      - catalogue
+      - user
+      - shipping
+      - payment
+    ports:
+      - "8080:8080"
+    networks:
+      - robot-shop
+    healthcheck:
+      test: [ "CMD", "curl", "-H", "X-INSTANA-SYNTHETIC: 1", "-f", "http://localhost:8080/" ]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    # Uncomment to enable Instana EUM
+    # environment:
+      # INSTANA_EUM_KEY: <your eum key>
+      # INSTANA_EUM_REPORTING_URL: <your reporting url>
+    logging:
+      <<: *logging
+
+networks:
+  robot-shop:
+    name: robot-shop
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: robot-shop
+

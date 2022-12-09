@@ -1,0 +1,9 @@
+[submodule "deps/dmon"]
+	path = deps/dmon
+	url = https://github.com/rootvr/dmon.git
+[submodule "deps/wgen"]
+	path = deps/wgen
+	url = https://github.com/rootvr/wgen.git
+[submodule "deps/dmon-xdriver"]
+	path = deps/dmon-xdriver
+	url = https://github.com/rootvr/dmon-xdriver.git
