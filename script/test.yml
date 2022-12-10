@@ -1,0 +1,6 @@
+app: robotshop
+data_dir: tests-10-5m-10-10m
+durations:
+  - 5m
+  - 10m
+jupyter_dir: jupyter
