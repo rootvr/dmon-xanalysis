@@ -2,8 +2,10 @@ import meta
 import os
 import sys
 import subprocess
-
+import logging
+import time
 from fs import read_yaml_from_file, check_dir_exists, create_dir
+
 
 reset = "\033[0m"
 red = "\033[31m"
@@ -12,6 +14,10 @@ yellow = "\033[33m"
 blue = "\033[34m"
 magenta = "\033[35m"
 cyan = "\033[36m"
+
+handler = logging.StreamHandler()
+logging.getLogger().addHandler(handler)
+logging.basicConfig(level=logging.NOTSET)
 
 
 class Driver:
@@ -26,13 +32,18 @@ class Driver:
         self.wgen_apispec_file = self.config_data[meta.WGEN_KEY][
             meta.WGEN_APISPEC_FILE_KEY
         ]
+        self.wait_sec_between_tests = self.config_data[meta.TEST_KEY][
+            meta.TEST_WAIT_SEC_BETWEEN_TESTS_KEY
+        ]
         self.tests_data = {}
+        self.logger = logging.getLogger(meta.APP_NAME)
+        self.logger.setLevel(logging.INFO)
 
     def run(self):
         self.create_env()
         for duration in self.tests_data.keys():
             for i, test in enumerate(self.tests_data[duration], 1):
-                print(f"{blue}running test {i} with day length of {duration}{reset}")
+                self.logger.info(f"{blue}init test {i} day {duration}{reset}\n")
                 self.xdriver_run(
                     duration,
                     i,
@@ -40,6 +51,10 @@ class Driver:
                     test["dir_path"],
                     test["workload_file"],
                 )
+                self.logger.info(
+                    f"{blue}finalize test thread sleep {self.wait_sec_between_tests} sec{reset}\n"
+                )
+                time.sleep(self.wait_sec_between_tests)
 
     def xdriver_run(
         self,
@@ -61,10 +76,10 @@ class Driver:
         """
 
         for output in self.execute(xdriver_command.split()):
-            print(
+            self.logger.info(
                 f"{magenta}day {day_length} test {curr_test}/{tot_tests} {green}"
-                + output,
-                end=f"{reset}",
+                + output
+                + f"{reset}"
             )
 
     def execute(self, command):
@@ -97,13 +112,17 @@ class Driver:
         if not check_dir_exists(os.path.join(meta.BASE_DIR)):
             create_dir(meta.BASE_DIR)
 
-        if check_dir_exists(os.path.join(meta.BASE_DIR, app)):
+        if not check_dir_exists(os.path.join(meta.BASE_DIR, app)):
+            create_dir(os.path.join(meta.BASE_DIR, app))
+
+        if check_dir_exists(os.path.join(meta.BASE_DIR, app, data_dir)):
             print(meta.DATA_DIR_EXISTS_ERROR)
             sys.exit(1)
 
-        create_dir(os.path.join(meta.BASE_DIR, app))
         create_dir(os.path.join(meta.BASE_DIR, app, data_dir))
-        create_dir(os.path.join(meta.BASE_DIR, app, jupyter_dir))
+
+        if not check_dir_exists(os.path.join(meta.BASE_DIR, app, jupyter_dir)):
+            create_dir(os.path.join(meta.BASE_DIR, app, jupyter_dir))
 
         for d in test_durations:
             for i in range(1, test_repetitions + 1):

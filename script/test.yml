@@ -1,22 +1,30 @@
+# tested app name
 app: robotshop
 
 test:
+  # name of directory that will contain tests
   data_dir: tests-2-30s-2-40s
+  # tests day length list
   durations:
     - 30s
     - 40s
-  jupyter_dir: jupyter
+  # number of repetitions for every test
   repetitions: 2
+  # sleep seconds
+  wait_seconds_between_tests: 5
+  # name of directory that will contain the jupyter notebooks
+  jupyter_dir: jupyter
 
 xdriver:
   log_maxrows: 100
-  filter: none
+  filter: network
 
 redis:
   ipv4: 0.0.0.0
   port: 6379
 
 wgen:
+  # must contain apispec_file and must specify workload_file for every entry in test.durations
   apispec_file: ../../dmon-analysis/test/config/robotshop/apispec.yml 
   30s:
     workload_file: ../../dmon-analysis/test/config/robotshop/workload.yml 
