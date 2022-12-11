@@ -1,0 +1,5 @@
+workload:
+  - day:
+      index_get:
+        rate: 5
+        unit: s

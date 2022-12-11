@@ -1,0 +1,6 @@
+name: sockshop API
+baseUrl: http://localhost:80
+api:
+  catalogue_get_all:
+    relativeUrl: /catalogue
+    method: GET

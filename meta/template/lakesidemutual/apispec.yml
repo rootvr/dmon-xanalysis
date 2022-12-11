@@ -1,0 +1,6 @@
+name: lakesidemutual API
+baseUrl: http://localhost:3020
+api:
+  index_get:
+    relativeUrl: /
+    method: GET

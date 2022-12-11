@@ -25,9 +25,9 @@ build: sync build-dmon build-wgen build-xdriver
 
 .SILENT: clean
 .PHONY: clean # clean all (combo)
-clean: clean-dmon clean-wgen clean-xdriver clean-docker
+clean: clean-dmon clean-wgen clean-xdriver clean-docker clean-test-env
 
-# ----- TOOLS -----
+# ----- TOOLS (build) -----
 
 .SILENT: build-dmon
 .PHONY: build-dmon # build dmon
@@ -35,23 +35,11 @@ build-dmon:
 	$(info $(H)Building dmon docker container$(R))
 	$(MAKE) --no-print-directory -C $(DMON_MOD_PATH) clean deps build genimage
 
-.SILENT: clean-dmon
-.PHONY: clean-dmon # clean dmon
-clean-dmon:
-	$(info $(H)Cleaning dmon docker container$(R))
-	$(MAKE) --no-print-directory -C $(DMON_MOD_PATH) clean delimage
-
 .SILENT: build-wgen
 .PHONY: build-wgen # build wgen
 build-wgen:
 	$(info $(H)Building wgen binary$(R))
 	$(MAKE) --no-print-directory -C $(WGEN_MOD_PATH) clean deps build install
-
-.SILENT: clean-wgen
-.PHONY: clean-wgen # clean wgen
-clean-wgen:
-	$(info $(H)Cleaning wgen binary$(R))
-	$(MAKE) --no-print-directory -C $(WGEN_MOD_PATH) clean uninstall
 
 .SILENT: build-xdriver
 .PHONY: build-xdriver # build xdriver
@@ -59,11 +47,33 @@ build-xdriver:
 	$(info $(H)Building xdriver binary$(R))
 	$(MAKE) --no-print-directory -C $(XDRIVER_MOD_PATH) build install
 
+# ----- TOOLS (clean) -----
+
+.SILENT: clean-dmon
+.PHONY: clean-dmon # clean dmon
+clean-dmon:
+	$(info $(H)Cleaning dmon docker container$(R))
+	$(MAKE) --no-print-directory -C $(DMON_MOD_PATH) clean delimage
+
+.SILENT: clean-wgen
+.PHONY: clean-wgen # clean wgen
+clean-wgen:
+	$(info $(H)Cleaning wgen binary$(R))
+	$(MAKE) --no-print-directory -C $(WGEN_MOD_PATH) clean uninstall
+
 .SILENT: clean-xdriver
 .PHONY: clean-xdriver # clean xdriver
 clean-xdriver:
 	$(info $(H)Cleaning xdriver binary$(R))
 	$(MAKE) --no-print-directory -C $(XDRIVER_MOD_PATH) clean uninstall
+
+.SILENT: clean-test-env
+.PHONY: clean-test-env # clean test env
+.ONESHELL:
+clean-test-env:
+	$(info $(H)Cleaning test env$(R))
+	cd ./fdriver
+	poetry env remove --all
 
 # ----- DOCKER -----
 
@@ -84,3 +94,14 @@ rs-start: build
 .PHONY: rs-stop # stop robotshop + dmon cluster
 rs-stop:
 	$(MAKE) --no-print-directory -C $(ROBOTSHOP_DOCKER_PATH) stop
+
+# ----- TESTING -----
+
+.SILENT: run-test
+.PHONY: run-test # run a test
+.ONESHELL:
+run-test:
+	$(info $(H)Building poetry virtual env for testing$(R))
+	cd ./fdriver
+	poetry install
+	poetry run bash -c "cd .. && python ./fdriver/src/main.py $(ARGS)"

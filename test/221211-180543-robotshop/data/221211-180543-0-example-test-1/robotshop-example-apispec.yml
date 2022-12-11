@@ -1,0 +1,6 @@
+name: robot-shop API
+baseUrl: http://localhost:8080
+api:
+  index_get:
+    relativeUrl: /
+    method: GET
