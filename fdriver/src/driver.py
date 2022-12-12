@@ -7,11 +7,13 @@ import os
 import datetime
 import sys
 
+
 class Driver:
     def __init__(self, args):
         self.logger = logging.getLogger("flow-driver")
         self.logger.setLevel(logging.DEBUG)
         ch = logging.StreamHandler()
+        ch.terminator = ""
         ch.setLevel(logging.DEBUG)
         fmt = logging.Formatter("%(name)s %(levelname)s %(message)s")
         ch.setFormatter(fmt)
@@ -69,7 +71,9 @@ class Driver:
         --redis-port {redisport} \
         --wgen-workload-file {workloadfile} \
         --wgen-apispec-file {apispecfile} \
-        --wgen-day-length {daylength}"
+        --wgen-day-length {daylength} \
+        -c \
+        "
 
     def copy_wgen(self):
         workload_cmd = f"cp -f {self.workflow['flow'][self.curr_test]['xdriver']['wgen']['workload']} {self.test_dir}"
@@ -80,6 +84,14 @@ class Driver:
     def copy_flow(self):
         workflow_cmd = f"cp -f {self.args.workflow_file} {self.root_dir.parent}"
         os.system(workflow_cmd)
+
+    def execute(self, command):
+        with subprocess.Popen(
+            command, stdout=subprocess.PIPE, universal_newlines=True
+        ) as p:
+            if p.stdout != None:
+                for line in iter(p.stdout.readline, ""):
+                    yield line
 
     def run(self):
         self.root_dir = (
@@ -97,25 +109,44 @@ class Driver:
                 self.run_dir = self.test_dir.joinpath(
                     f"{iter}-{test['xdriver']['wgen']['day']}"
                 )
-                try:
-                    subprocess.run(
-                        self.cmd_build(
-                            self.run_dir,
-                            test["xdriver"]["rows"],
-                            test["xdriver"]["filter"],
-                            test["xdriver"]["redis"]["ip"],
-                            test["xdriver"]["redis"]["port"],
-                            test["xdriver"]["wgen"]["workload"],
-                            test["xdriver"]["wgen"]["apispec"],
-                            test["xdriver"]["wgen"]["day"],
-                        ),
-                        shell=True,
-                        check=True,
-                    )
-                except Exception:
-                    self.logger.error(f"unable to run dmon-xdriver")
-                    sys.exit(1)
-                self.logger.info(f"Sleeping for {test['sleep']} seconds")
+
+                # for output in self.execute(
+                #         self.cmd_build(
+                #             self.run_dir,
+                #             "s",
+                #             test["xdriver"]["filter"],
+                #             test["xdriver"]["redis"]["ip"],
+                #             test["xdriver"]["redis"]["port"],
+                #             test["xdriver"]["wgen"]["workload"],
+                #             test["xdriver"]["wgen"]["apispec"],
+                #             test["xdriver"]["wgen"]["day"],
+                #         ).split(),
+                #     ):
+                #     print(output, end='')
+
+                with subprocess.Popen(
+                    self.cmd_build(
+                        self.run_dir,
+                        test["xdriver"]["rows"],
+                        test["xdriver"]["filter"],
+                        test["xdriver"]["redis"]["ip"],
+                        test["xdriver"]["redis"]["port"],
+                        test["xdriver"]["wgen"]["workload"],
+                        test["xdriver"]["wgen"]["apispec"],
+                        test["xdriver"]["wgen"]["day"],
+                    ).split(),
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                ) as p:
+                    if p.stdout != None:
+                        for line in p.stdout:
+                            sys.stdout.write("\x1b[2K\r")
+                            self.logger.info(line.decode())
+                            self.logger.info(
+                                f"Running test {idx+1}/{len(self.workflow['flow'])}, epoch {iter+1}/{test['iter']}\r"
+                            )
+
                 time.sleep(test["sleep"])
             self.copy_wgen()
         self.copy_flow()
