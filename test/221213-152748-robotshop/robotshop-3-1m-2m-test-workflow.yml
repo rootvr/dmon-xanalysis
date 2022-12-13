@@ -1,0 +1,28 @@
+app: robotshop
+flow:
+  - name: 1m-tests
+    iter: 3
+    sleep: 5
+    xdriver:
+      rows: 1000
+      filter: network
+      redis:
+        ip: 0.0.0.0
+        port: 6379
+      wgen:
+        workload: ./robotshop-1m-test-workload.yml
+        apispec: ./robotshop-apispec.yml
+        day: 1m
+  - name: 2m-tests
+    iter: 3
+    sleep: 5
+    xdriver:
+      rows: 1000
+      filter: network
+      redis:
+        ip: 0.0.0.0
+        port: 6379
+      wgen:
+        workload: ./robotshop-2m-test-workload.yml
+        apispec: ./robotshop-apispec.yml
+        day: 2m

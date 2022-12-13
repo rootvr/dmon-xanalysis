@@ -1,0 +1,8 @@
+[{"Timestamp":"2022-12-13 14:33:03.555151700","Type":"network","SubType":"general","SendIP":"172.18.0.13","RecvIP":"172.18.0.1","Protocol":"HTTP","TimeDelta":0.000023714},
+{"Timestamp":"2022-12-13 14:33:03.555194417","Type":"network","SubType":"general","SendIP":"172.18.0.1","RecvIP":"172.18.0.13","Protocol":"TCP","TimeDelta":0.000042717},
+{"Timestamp":"2022-12-13 14:33:03.754212212","Type":"network","SubType":"general","SendIP":"172.18.0.1","RecvIP":"172.18.0.13","Protocol":"HTTP","TimeDelta":0.199017795},
+{"Timestamp":"2022-12-13 14:33:03.754651737","Type":"network","SubType":"general","SendIP":"172.18.0.13","RecvIP":"172.18.0.1","Protocol":"TCP","TimeDelta":0.000439525},
+{"Timestamp":"2022-12-13 14:33:03.754749343","Type":"network","SubType":"general","SendIP":"172.18.0.13","RecvIP":"172.18.0.1","Protocol":"TCP","TimeDelta":0.000097606},
+{"Timestamp":"2022-12-13 14:33:03.754755798","Type":"network","SubType":"general","SendIP":"172.18.0.1","RecvIP":"172.18.0.13","Protocol":"TCP","TimeDelta":6.455e-6},
+{"Timestamp":"2022-12-13 14:33:03.754806559","Type":"network","SubType":"general","SendIP":"172.18.0.13","RecvIP":"172.18.0.1","Protocol":"HTTP","TimeDelta":0.000050761},
+{"Timestamp":"2022-12-13 14:33:03.754912329","Type":"network","SubType":"general","SendIP":"172.18.0.1","RecvIP":"172.18.0.13","Protocol":"TCP","TimeDelta":0.00010577}]
