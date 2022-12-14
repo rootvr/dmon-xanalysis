@@ -25,7 +25,7 @@ build: sync build-dmon build-wgen build-xdriver
 
 .SILENT: clean
 .PHONY: clean # clean all (combo)
-clean: clean-dmon clean-wgen clean-xdriver clean-docker clean-test-env
+clean: clean-dmon clean-wgen clean-xdriver clean-docker clean-fdriver clean-alyslib
 
 # ----- TOOLS (build) -----
 
@@ -67,12 +67,20 @@ clean-xdriver:
 	$(info $(H)Cleaning xdriver binary$(R))
 	$(MAKE) --no-print-directory -C $(XDRIVER_MOD_PATH) clean uninstall
 
-.SILENT: clean-test-env
-.PHONY: clean-test-env # clean test env
+.SILENT: clean-fdriver
+.PHONY: clean-fdriver # clean test env
 .ONESHELL:
-clean-test-env:
+clean-fdriver:
 	$(info $(H)Cleaning test env$(R))
-	cd ./fdriver
+	cd $(FDRIVER_POETRY_PATH)
+	poetry env remove --all
+
+.SILENT: clean-alyslib
+.PHONY: clean-alyslib # clean test env
+.ONESHELL:
+clean-alyslib:
+	$(info $(H)Cleaning analysis env$(R))
+	cd $(ALYSLIB_POETRY_PATH)
 	poetry env remove --all
 
 # ----- DOCKER -----
@@ -85,23 +93,32 @@ clean-docker:
 
 # ----- APPLICATIONS -----
 
-.SILENT: rs-start
-.PHONY: rs-start # start robotshop + dmon cluster
-rs-start: build
+.SILENT: start-rs
+.PHONY: start-rs # start robotshop + dmon cluster
+start-rs: build
 	$(MAKE) --no-print-directory -C $(ROBOTSHOP_DOCKER_PATH) start
 
-.SILENT: rs-stop
-.PHONY: rs-stop # stop robotshop + dmon cluster
-rs-stop:
+.SILENT: stop-rs
+.PHONY: stop-rs # stop robotshop + dmon cluster
+stop-rs:
 	$(MAKE) --no-print-directory -C $(ROBOTSHOP_DOCKER_PATH) stop
 
 # ----- TESTING -----
 
-.SILENT: run-test
-.PHONY: run-test # run a test
+.SILENT: run-fdriver
+.PHONY: run-fdriver # run a test
 .ONESHELL:
-run-test:
+run-fdriver:
 	$(info $(H)Building poetry virtual env for testing$(R))
-	cd ./fdriver
+	cd $(FDRIVER_POETRY_PATH)
 	poetry install
-	poetry run bash -c "cd .. && python ./fdriver/src/main.py $(ARGS)"
+	poetry run bash -c "cd ../.. && python ./src/fdriver/main.py $(ARGS)"
+
+.SILENT: run-alyslib
+.PHONY: run-alyslib # activate analysis env
+.ONESHELL:
+run-alyslib:
+	$(info $(H)Building poetry virtual env for analysis$(R))
+	cd $(ALYSLIB_POETRY_PATH)
+	poetry install
+	poetry run bash -c "cd ../../test && jupyter-lab"
