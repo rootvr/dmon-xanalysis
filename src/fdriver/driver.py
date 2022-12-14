@@ -8,40 +8,9 @@ import datetime
 import sys
 
 
-def pbar(
-    iteration,
-    total,
-    prefix="",
-    suffix="",
-    decimals=1,
-    length=100,
-    fill="#",
-    printEnd="\r",
-):
-    """
-    Call in a loop to create terminal progress bar
-    @params:
-        iteration   - Required  : current iteration (Int)
-        total       - Required  : total iterations (Int)
-        prefix      - Optional  : prefix string (Str)
-        suffix      - Optional  : suffix string (Str)
-        decimals    - Optional  : positive number of decimals in percent complete (Int)
-        length      - Optional  : character length of bar (Int)
-        fill        - Optional  : bar fill character (Str)
-        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
-    """
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-    filledLength = int(length * iteration // total)
-    bar = fill * filledLength + "-" * (length - filledLength)
-    print(f"\r{prefix} |{bar}| {percent}% {suffix}", end=printEnd)
-    # Print New Line on Complete
-    # if iteration == total:
-    #     print()
-
-
 class Driver:
     def __init__(self, args):
-        self.logger = logging.getLogger("flow-driver")
+        self.logger = logging.getLogger("fdriver")
         self.logger.setLevel(logging.DEBUG)
         ch = logging.StreamHandler()
         ch.terminator = ""
@@ -81,7 +50,7 @@ class Driver:
 
     @staticmethod
     def dtime():
-        return f"{datetime.datetime.now():%y%m%d-%H%M%S}-"
+        return f"{datetime.datetime.now():%d%m%y-%H%M%S}-"
 
     @staticmethod
     def cmd_build(
@@ -116,13 +85,13 @@ class Driver:
         workflow_cmd = f"cp -f {self.args.workflow_file} {self.root_dir.parent}"
         os.system(workflow_cmd)
 
-    def execute(self, command):
-        with subprocess.Popen(
-            command, stdout=subprocess.PIPE, universal_newlines=True
-        ) as p:
-            if p.stdout != None:
-                for line in iter(p.stdout.readline, ""):
-                    yield line
+    # def execute(self, command):
+    #     with subprocess.Popen(
+    #         command, stdout=subprocess.PIPE, universal_newlines=True
+    #     ) as p:
+    #         if p.stdout != None:
+    #             for line in iter(p.stdout.readline, ""):
+    #                 yield line
 
     def run(self):
         self.root_dir = (
@@ -133,8 +102,8 @@ class Driver:
         self.root_dir.mkdir(parents=True, exist_ok=True)
         # tt = len(self.workflow['flow'])
         tt = 0
-        for test in self.workflow['flow']:
-            tt += test['iter']
+        for test in self.workflow["flow"]:
+            tt += test["iter"]
         ii = 0
         for idx, test in enumerate(self.workflow["flow"]):
             self.curr_test = idx
@@ -180,15 +149,8 @@ class Driver:
                         for line in p.stdout:
                             sys.stdout.write("\x1b[2K\r")
                             self.logger.info(line.decode())
-                            # self.logger.info(
-                            #     f"Running test {idx+1}/{len(self.workflow['flow'])}, epoch {iter+1}/{test['iter']}\r"
-                            # )
-                            pbar(
-                                ii,
-                                tt,
-                                prefix="Progress:",
-                                suffix="Complete",
-                                length=50,
+                            self.logger.info(
+                                f"Running test {idx+1}/{len(self.workflow['flow'])}, epoch {iter+1}/{test['iter']}\r"
                             )
 
                 time.sleep(test["sleep"])
