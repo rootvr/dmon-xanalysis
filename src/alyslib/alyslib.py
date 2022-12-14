@@ -1,94 +1,89 @@
 import numpy as np
 import pandas as pd
 import math
-import os
+import pathlib
+from itertools import combinations
 
 
-def import_netgen_datasets(data_base_path):
-    # first level FS scan
-    p = os.path.abspath(data_base_path)
-    l1 = []
-    for i in os.listdir(p):
-        l1.append(os.path.join(p, i))
-
-    # second level FS scan with collection of all the NETWORK GENERAL JSON data
-    l2 = []
-    for l in l1:
-        r1 = []
-        for e1 in os.listdir(l):
-            if ".yml" not in e1:
-                r2 = []
-                c = os.path.join(l, e1)
-                for e2 in os.listdir(c):
-                    if "net.gen" in e2:
-                        r2.append(os.path.join(c, e2))
-                r1.append(r2)
-        l2.append(r1)
-    return l2
+def import_data(data_dir, filter):
+    l = []
+    root = pathlib.Path().cwd().joinpath(data_dir)
+    for tidx, tdir in enumerate([d for d in root.iterdir() if d.is_dir()]):
+        l.append([])
+        for iidx, idir in enumerate([d for d in tdir.iterdir() if d.is_dir()]):
+            l[tidx].append([])
+            for jdata in idir.glob(f"*.{filter}.json"):
+                l[tidx][iidx].append(jdata)
+    return l
 
 
-def build_df_from_json_files(f):
-    df1 = [pd.DataFrame(pd.read_json(j)) for j in f]
-
-    for i, df in enumerate(df1):
+def json_to_df(file_path):
+    dfl = [pd.DataFrame(pd.read_json(j)) for j in file_path]
+    for i, df in enumerate(dfl):
         df.drop("Type", axis=1, inplace=True)
         df.drop("SubType", axis=1, inplace=True)
         df.drop("Protocol", axis=1, inplace=True)
-
-        df1[i] = df
-
-    if len(df1) > 1:
-        df1 = pd.concat(df1)
+        dfl[i] = df
+    if len(dfl) > 1:
+        dfl = pd.concat(dfl)
     else:
-        df1 = df1[0]
-
-    df1.reset_index(inplace=True)
-    df1.drop("index", axis=1, inplace=True)
-    df1["Timestamp"] = df1["Timestamp"].dt.strftime("%Y-%m-%d %H:%M:%S")
-    df1["Timestamp"] = pd.to_datetime(df1["Timestamp"])
-
-    return df1
+        dfl = dfl[0]
+    dfl.reset_index(inplace=True)
+    dfl.drop("index", axis=1, inplace=True)
+    dfl["Timestamp"] = dfl["Timestamp"].dt.strftime("%Y-%m-%d %H:%M:%S")
+    dfl["Timestamp"] = pd.to_datetime(dfl["Timestamp"])
+    return dfl
 
 
-def cmpdiff(df1, df2, key):
+def build_dfs(dataset):
+    l = []
+    for i in range(len(dataset)):
+        l.append([])
+        for file_path in dataset[i]:
+            l[i].append(json_to_df(file_path))
+    return l
+
+
+def clean_network_noise(dfmerge):
+    for df1, df2 in combinations(dfmerge, 2):
+        diff_by_key(df1, df2, "SendIP")
+        diff_by_key(df1, df2, "RecvIP")
+
+
+def diff_by_key(df1, df2, key):
     ip1 = set(df1[key])
     ip2 = set(df2[key])
-
     if ip1 != ip2:
         diff12 = ip1.difference(ip2)
         diff21 = ip2.difference(ip1)
-
-        # df1
         if len(diff12):
             delidx = []
             for el in diff12:
                 delidx += list(df1[df1[key] == el].index)
-            print(
-                "deleting %d items from function param (df1) - %s"
-                % (len(delidx), delidx)
-            )
+            print(f"dataframe {id(df1)}, removed {len(delidx)} items, {delidx[:5]}")
             df1.drop(index=delidx, axis=0, inplace=True)
-        print()
-
-        # df2
         if len(diff21):
             delidx = []
             for el in diff21:
                 delidx += list(df2[df2[key] == el].index)
-            print(
-                "deleting %d items from function param (df2) - %s"
-                % (len(delidx), delidx)
-            )
+            print(f"dataframe {id(df2)}, removed {len(delidx)} items, {delidx[:5]}")
             df2.drop(index=delidx, axis=0, inplace=True)
-        print()
 
 
-def confidence_95_interval(data):
+def sort_by_key(dfmerge, key):
+    for df in dfmerge:
+        df.sort_values(key, inplace=True)
+
+
+def cmp_elapsed(dfmerge):
+    for df in dfmerge:
+        df["Elapsed"] = pd.to_datetime(df.Timestamp - df.Timestamp.min(), unit="ns")
+        df.Elapsed = df.Elapsed.dt.time
+
+
+def cmp_conf_interval(data, z_score=1.96):
     mean = np.mean(data)
     std = np.std(data)
-    z_score = 1.96
     size = len(data)
-
-    err = z_score * (std / math.sqrt(size))
-
+    err = z_score * (std / np.sqrt(size))
     return (mean - err, mean + err)
