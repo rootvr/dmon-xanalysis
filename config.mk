@@ -9,3 +9,5 @@ FDRIVER_POETRY_PATH = ./src/fdriver
 ALYSLIB_POETRY_PATH = ./src/alyslib
 
 ROBOTSHOP_DOCKER_PATH = ./docker/robotshop
+SOCKSHOP_DOCKER_PATH = ./docker/sockshop
+LAKESIDE_DOCKER_PATH = ./docker/lakeside

@@ -25,7 +25,7 @@ build: sync build-dmon build-wgen build-xdriver
 
 .SILENT: clean
 .PHONY: clean # clean all (combo)
-clean: clean-dmon clean-wgen clean-xdriver clean-docker clean-fdriver clean-alyslib
+clean: stop-robotshop stop-sockshop stop-lakeside clean-dmon clean-wgen clean-xdriver clean-docker clean-fdriver clean-alyslib
 
 # ----- TOOLS (build) -----
 
@@ -93,22 +93,42 @@ clean-docker:
 
 # ----- APPLICATIONS -----
 
-.SILENT: start-rs
-.PHONY: start-rs # start robotshop + dmon cluster
-start-rs: build
+.SILENT: start-robotshop
+.PHONY: start-robotshop # start robotshop + dmon cluster
+start-robotshop: build
 	$(MAKE) --no-print-directory -C $(ROBOTSHOP_DOCKER_PATH) start
 
-.SILENT: stop-rs
-.PHONY: stop-rs # stop robotshop + dmon cluster
-stop-rs:
+.SILENT: stop-robotshop
+.PHONY: stop-robotshop # stop robotshop + dmon cluster
+stop-robotshop:
 	$(MAKE) --no-print-directory -C $(ROBOTSHOP_DOCKER_PATH) stop
+
+.SILENT: start-sockshop
+.PHONY: start-sockshop # start sockshop + dmon cluster
+start-sockshop: build
+	$(MAKE) --no-print-directory -C $(SOCKSHOP_DOCKER_PATH) start
+
+.SILENT: stop-sockshop
+.PHONY: stop-sockshop # stop sockshop + dmon cluster
+stop-sockshop:
+	$(MAKE) --no-print-directory -C $(SOCKSHOP_DOCKER_PATH) stop
+
+.SILENT: start-lakeside
+.PHONY: start-lakeside # start lakeside + dmon cluster
+start-lakeside: build
+	$(MAKE) --no-print-directory -C $(LAKESIDE_DOCKER_PATH) start
+
+.SILENT: stop-lakeside
+.PHONY: stop-lakeside # stop lakeside + dmon cluster
+stop-lakeside:
+	$(MAKE) --no-print-directory -C $(LAKESIDE_DOCKER_PATH) stop
 
 # ----- TESTING -----
 
 .SILENT: run-fdriver
 .PHONY: run-fdriver # run a test
 .ONESHELL:
-run-fdriver:
+run-fdriver: build
 	$(info $(H)Building poetry virtual env for testing$(R))
 	cd $(FDRIVER_POETRY_PATH)
 	poetry install

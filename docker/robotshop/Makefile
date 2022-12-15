@@ -27,7 +27,7 @@ start: clone up
 .SILENT: down
 .PHONY: down
 down:
-	$(info $(H)Starting robotshop + dmon cluster$(R))
+	$(info $(H)Stopping robotshop + dmon cluster$(R))
 	docker-compose -f $(ROBOTSHOP_COMPOSE_FILE) down
 
 .SILENT: stop
