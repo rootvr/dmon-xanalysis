@@ -81,6 +81,17 @@ def cmp_elapsed(dfmerge):
         df.Elapsed = df.Elapsed.dt.time
 
 
+def clean_timedelta_outliers(dfmerge):
+    for df in dfmerge:
+        sendIPs = list(set(df["SendIP"]))
+
+        for ip in sendIPs:
+            q3 = df[df.SendIP == ip].TimeDelta.quantile(0.75)
+
+            idx = list(df[(df.TimeDelta > q3) & (df.SendIP == ip)].index)
+            df.drop(index=idx, axis=0, inplace=True)
+
+
 def cmp_conf_interval(data, z_score=1.96):
     mean = np.mean(data)
     std = np.std(data)
