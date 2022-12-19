@@ -1,0 +1,5 @@
+workload:
+  - day:
+      catalogue_get_all:
+        rate: 100
+        unit: s

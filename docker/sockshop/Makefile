@@ -39,14 +39,14 @@ start: weave-up scope-up up
 .PHONY: weave-down
 weave-down:
 	$(info $(H)Stopping weave$(R))
-	weave reset --force
-	weave stop
+	-weave reset --force
+	-weave stop
 
 .SILENT: scope-down
 .PHONY: scope-down
 scope-down:
 	$(info $(H)Stopping scope$(R))
-	scope stop
+	-scope stop
 
 .SILENT: down
 .PHONY: down

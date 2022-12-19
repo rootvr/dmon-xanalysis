@@ -4,7 +4,7 @@ flow:
     iter: 10
     sleep: 3
     xdriver:
-      rows: 1000
+      rows: 50000
       filter: network
       redis:
         ip: 0.0.0.0
@@ -17,7 +17,7 @@ flow:
     iter: 10
     sleep: 3
     xdriver:
-      rows: 1000
+      rows: 50000
       filter: network
       redis:
         ip: 0.0.0.0

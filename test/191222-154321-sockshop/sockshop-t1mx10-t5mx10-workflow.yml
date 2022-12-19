@@ -1,0 +1,28 @@
+app: sockshop
+flow:
+  - name: t1mx10
+    iter: 10
+    sleep: 3
+    xdriver:
+      rows: 50000
+      filter: network
+      redis:
+        ip: 0.0.0.0
+        port: 6379
+      wgen:
+        workload: ./sockshop-t1mx10-workload.yml
+        apispec: ../template/sockshop/apispec.yml
+        day: 1m
+  - name: t5mx10
+    iter: 10
+    sleep: 3
+    xdriver:
+      rows: 50000
+      filter: network
+      redis:
+        ip: 0.0.0.0
+        port: 6379
+      wgen:
+        workload: ./sockshop-t5mx10-workload.yml
+        apispec: ../template/sockshop/apispec.yml
+        day: 5m
