@@ -56,7 +56,7 @@
 - It must be a local executable
 - It must find a `wgen` executable on the host machine
 - It must find an online instance of the Redis server (the same that `dmon` uses, could be a local server or a remote Docker-powered one)
-- It is used to perform a single experiment and to build the dataset (JSON file) by driving the entire capture process
+- It is used to perform a single experiment and to build the dataset (JSON files) by driving the entire capture process
 
 ### Workflow driver (`dmon-fdriver`)
 
@@ -67,5 +67,35 @@
 
 ### Steps
 
-1. `dmon-fdriver` todo
-2. `dmon-xdriver` todo
+1. Start of the target application
+2. Start of `dmon` (must see the target application)
+3. Start of `dmon-fdriver`
+    - It parses the workflow specification YAML file
+    - It uses a user-definable root directory as a base directory for the experiments datasets: the directory will be created if it doesn't exist
+    - It creates the directory hierarchy for storing all the experiments files
+    - Following the workflow specification, it sequencially executes the declared experiments. It waits a user-definable number of seconds between each experiment (the setting is settable in the workflow file) 
+    - For each experiment, it executes `dmon-xdriver` as a child process by passing the arguments it needs that are written in the workflow file
+4. Start of `dmon-xdriver`
+    - It executes `wgen` as a child process by passing the arguments it needs (passed in turn as arguments to `dmon-xdriver` itself)
+    - It starts 3 workers (threads). Two of them use a channel for inter-thread communication (in details, the dispatcher and the broker workers use that channel)
+    - The wgen-handle worker is responsible for capturing `wgen` output:
+        - It captures `wgen` output and it logs it to the standard output: this capture is performed for logging purposes
+    - The dispatcher worker is responsible for the serialization of the data payloads into JSON files:
+        - It receives the data payloads from the broker worker (thanks to the inter-thread communication channel)
+        - It manages the filtering of the data payloads based on a user-definable filter parameter passed as an argument
+        - It serializes the data payloads in JSON format and it writes them into multiple JSON files. Each of them have a user-definable maximum number of rows passed as an argument
+        - The JSON files are placed inside a user-definable directory (passed as an argument) created at runtime to host the dataset files
+    - The broker worker is responsible for supervising the message brokering and the capturing of all the data payloads:
+        - It instanciates and manages the connection between the client and the (local or remote) Redis server (the same Redis server used by `dmon`)
+        - It starts capturing the data payloads from Redis by subscribing to the channels that contain the data according to the user-definable filter parameter passed as an argument
+        - Each captured data payload is forwarded to the inter-thread communication channel (the forwarded data will be managed by the dispatcher worker)
+
+## Uses of multithreading strategies
+
+- `dmon`: the multithreading strategy is used to perform several different data captures at the same time. The microservices-based applications generates all the data simultaneously, so without the use of multithreading we might lose some of the data
+
+- `wgen`: the multithreading strategy is used to simulate multiple requests at the same time made in a single day. In this way we can simulate N users that are concurrently using the microservice-based application according to the workflow that is described in the workload file, and thus we can make a more realistic simulation of a workload
+
+- `dmon-xdriver`: the multithreading strategy is used to handle data acquisition from multiple sources simultaneously. We use one thread to capture `wgen` output and one thread to capture the Redis data at the same time. We also use the multithreading strategy to manage the acquired data: we use a separate thread to write the Redis payloads captured during the test to the JSON files
+
+- `dmon-fdriver`: we do not have multithreading because our purpose here is to organize the test workspace and run `dmon-xdriver` multiple times on separate runs (we wait for one test to complete before starting another) to create the JSON files that we need for analysis
