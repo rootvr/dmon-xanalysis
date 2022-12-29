@@ -7,7 +7,7 @@
 - All its containers must run on the host machine
 - It must be reachable through the Docker socket (launch param: `-v /var/run/docker.sock:/var/run/docker.sock`)
 - It must unify its network with the one of the host machine (launch param: `--network=host`)
-- It must expose an queryable API (to be attacked by the workload generator)
+- It must expose a queryable API (to be attacked by the workload generator)
 
 ### Monitoring system (`dmon`)
 
